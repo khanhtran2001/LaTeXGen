@@ -1,0 +1,10 @@
+streamlit
+torch
+pandas
+numpy
+fastapi
+onnxruntime
+tokenizers
+altair==4.0
+
+pytest

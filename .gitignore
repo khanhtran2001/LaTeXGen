@@ -1,1 +1,6 @@
 \venv
+\guienv
+__pycache__
+*.onnx
+*.bat
+.pytest_cache
