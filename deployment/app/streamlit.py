@@ -16,7 +16,7 @@ if __name__ == "__main__":
     #sampling_type = streamlit.selectbox(label="Sampling type", options=sampling_type_list)
 
     default_temperature = 0.22
-    temperature = streamlit.slider(label="Temperature", min_value=0.0, max_value=1.0, value=default_temperature)
+    temperature = streamlit.slider(label="Temperature", min_value=0.0, max_value=2.0, value=default_temperature)
 
     search_option_list = ["Greedy", "Beam"]
     search_option = streamlit.selectbox(label="Searching algorithm",options=search_option_list)

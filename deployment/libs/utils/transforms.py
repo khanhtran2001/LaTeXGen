@@ -68,7 +68,7 @@ class DeployTransform(object):
             if img.mode != "L":
                 img = img.convert("L")
             img = np.array(img, dtype=np.float32)[np.newaxis, ...]  # C H W
-        # self.save_img(img[0], "original.png")
+        # self.save_img(img[0], "crop_bbox.png") 
         img = self.crop_bbox(img)
         # self.save_img(img[0], "crop_bbox.png")
         img = self.pad_resize(img)  # C H W

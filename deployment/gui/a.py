@@ -19,6 +19,8 @@ from screeninfo import get_monitors
 from deployment.libs.models.model import get_model
 from deployment.libs.utils.config import Config
 
+tempimg = None
+
 class App(QMainWindow):
     isProcessing = False
 
@@ -155,21 +157,23 @@ class App(QMainWindow):
             self.returnSnip()
 
     def returnSnip(self, img=None):
-        # self.toggleProcessing(True)
-        # self.retryButton.setEnabled(False)
+        self.toggleProcessing(True)
+        self.retryButton.setEnabled(False)
 
-        # self.show()
+        self.show()
         # try:
         #     self.model.args.temperature = self.tempField.value()
         #     if self.model.args.temperature == 0:
         #         self.model.args.temperature = 1e-8
         # except:
         #     pass
-        # # Run the model in a separate thread
-        # self.thread = ModelThread(img=img, model=self.model)
-        # self.thread.finished.connect(self.returnPrediction)
-        # self.thread.finished.connect(self.thread.deleteLater)
-        # self.thread.start()
+        # Run the model in a separate thread
+        if os.path.exists("tempimg.png"):
+            img = Image.open("tempimg.png")
+        self.thread = ModelThread(img=img, model=self.model, temperature = self.tempField.value())
+        self.thread.finished.connect(self.returnPrediction)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
         pass
 
     def returnPrediction(self, result):
@@ -188,9 +192,20 @@ class App(QMainWindow):
 
     def displayPrediction(self, prediction=None):
         if self.isProcessing:
-            pageSource = """<center>
-            <img src="qrc:/icons/processing-icon-anim.svg" width="50", height="50">
-            </center>"""
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # Construct the full path to the image
+            image_path = os.path.join(script_dir, "proce_icon_1.png")
+
+            # Construct the pageSource with the image
+            pageSource = """
+            <body>
+            <center><h3>Processing....</h3></center>
+            </body>    
+            """.format(image_path=image_path) 
+            # pageSource = """<center>
+            # <img src="proce_icon_1.png">
+            # </center>"""
         else:
             if prediction is not None:
                 self.textbox.setText("${equation}$".format(equation=prediction))
@@ -217,17 +232,26 @@ class App(QMainWindow):
         self.webView.setHtml(pageSource)
 
 
+    def check_temp_img_exist():
+        current_dir = os.getcwd()
+        pass
+
 class ModelThread(QThread):
     finished = pyqtSignal(dict)
 
-    def __init__(self, img, model):
+    def __init__(self, img, model,temperature):
         super().__init__()
         self.img = img
-        self.model = model
+        self.config = Config()
+        self.model = get_model(self.config)
+        self.temperature = temperature        
 
     def run(self):
         try:
-            prediction = self.model(self.img)
+            self.config.temperature = self.temperature        
+            model =  get_model(self.config)
+            prediction = model(self.img)[0][0][0]
+            print(prediction)
             # replace <, > with \lt, \gt so it won't be interpreted as html code
             prediction = prediction.replace('<', '\\lt ').replace('>', '\\gt ')
             self.finished.emit({"success": True, "prediction": prediction})
@@ -328,6 +352,7 @@ class SnipWidget(QMainWindow):
         QApplication.processEvents()
         try:
             img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
+            img.save("tempimg.png")
         except Exception as e:
             if sys.platform == "darwin":
                 img = ImageGrab.grab(bbox=(x1//self.factor, y1//self.factor,
@@ -346,6 +371,8 @@ def main(arguments = None):
             os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
         app = QApplication(sys.argv)
         ex = App(arguments)
+        if os.path.exists("tempimg.png"):
+            os.remove("tempimg.png")
         sys.exit(app.exec())
 
 main()
